@@ -21,6 +21,6 @@ void user_delay_us(uint32_t, void *);
 int8_t user_i2c_read(uint8_t, uint8_t *, uint32_t, void *);
 int8_t user_i2c_write(uint8_t, const uint8_t *, uint32_t, void *);
 float stream_sensor_data_normal_mode(struct bme280_dev *, struct identifier);
-void bme_start();
+struct bme280_dev bme_start();
 
 #endif

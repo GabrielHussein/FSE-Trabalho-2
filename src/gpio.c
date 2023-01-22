@@ -29,15 +29,16 @@ void turnOffFan() {
   softPwmWrite(FAN, 0);
 }
 
-void pwmControl(int intensity_signal) {
-  if (intensity_signal > 0) {
-    turnResistanceOn(intensity_signal);
-    turnFanOff();
+void pwmControl(int pwmIntensity) {
+  if (pwmIntensity > 0) {
+    turnOnResistor(pwmIntensity);
+    turnOffFan();
   } else {
-    if (intensity_signal <= -40)
-      turnFanOn(intensity_signal * -1);
-    else
-      turnFanOff();
-    turnResistanceOff();
+    if(pwmIntensity <= -40) {
+      turnOnFan(pwmIntensity * -1);
+    } else {
+      turnOffFan();
+    }
+    turnOffResistor();
   }
 }

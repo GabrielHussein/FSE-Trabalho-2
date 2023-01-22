@@ -30,7 +30,7 @@ int initUart(){
 }
 
 void requestToUart(int uart0_filestream, unsigned char code){
-    unsigned char package[7] = {0x01, 0x23, code, 0x01, 0x04, 0x03, 0x08};
+    unsigned char package[7] = {0x01, 0x23, code, 0x03, 0x02, 0x00, 0x00};
     short crc = calcula_CRC(package, 7);
 
     unsigned char message[9];
@@ -44,7 +44,7 @@ void requestToUart(int uart0_filestream, unsigned char code){
 }
 
 void sendToUart(int uart0_filestream, unsigned char code, int value){
-    unsigned char package[7] = {0x01, 0x16, code, 0x01, 0x04, 0x03, 0x08};
+    unsigned char package[7] = {0x01, 0x16, code, 0x03, 0x02, 0x00, 0x00};
     unsigned char message[13];
 
     memcpy(message, &package, 7);

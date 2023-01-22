@@ -1,16 +1,17 @@
 #include "bme280.h"
 #include "i2c.h"
 
-void bme_start(){
+
+struct bme280_dev bme_start(){
   int8_t rslt = BME280_OK;
   struct bme280_dev dev;
   struct identifier id;
   
   id.dev_addr = BME280_I2C_ADDR_PRIM;
   dev.intf = BME280_I2C_INTF;
-  dev.read = user_i2c_read;
-  dev.write = user_i2c_write;
-  dev.delay_us = user_delay_us;
+  dev.read = userI2cRead;
+  dev.write = userI2cWrite;
+  dev.delay_us = userDelayMs;
 
   dev.intf_ptr = &id;
   char i2c_[] = "/dev/i2c-1";
@@ -34,12 +35,11 @@ void bme_start(){
 
   rslt = stream_sensor_data_normal_mode(&dev);
 
-  close(id.fd);
-
+  return dev;
 }
 
 
-float stream_sensor_data_normal_mode(struct bme280_dev *dev, struct identifier id) {
+float stream_sensor_data_normal_mode(struct bme280_dev *dev) {
     int8_t rslt;
     uint8_t settings_sel;
     struct bme280_data comp_data;
@@ -61,21 +61,15 @@ float stream_sensor_data_normal_mode(struct bme280_dev *dev, struct identifier i
 
     dev->delay_us(100000, dev->intf_ptr);
     rslt = bme280_get_sensor_data(BME280_ALL, &comp_data, dev);
-    if (rslt != BME280_OK)
-    {
-        close(id.fd);
-        return bme_start();
-    }
 
-    close(id.fd);
     return comp_data.temperature;
 }
 
-void user_delay_us(uint32_t period, void *intf_ptr){
-    usleep(period);
+void userDelayMs(uint32_t period, void *intf_ptr){
+    usleep(period * 2000);
 }
 
-int8_t user_i2c_read(uint8_t reg_addr, uint8_t *data, uint32_t len, void *intf_ptr){
+int8_t userI2cRead(uint8_t reg_addr, uint8_t *data, uint32_t len, void *intf_ptr){
     struct identifier id;
 
     id = *((struct identifier *)intf_ptr);
@@ -86,7 +80,7 @@ int8_t user_i2c_read(uint8_t reg_addr, uint8_t *data, uint32_t len, void *intf_p
     return 0;
 }
 
-int8_t user_i2c_write(uint8_t reg_addr, const uint8_t *data, uint32_t len, void *intf_ptr){
+int8_t userI2cWrite(uint8_t reg_addr, const uint8_t *data, uint32_t len, void *intf_ptr){
     uint8_t *buf;
     struct identifier id;
 
@@ -95,8 +89,7 @@ int8_t user_i2c_write(uint8_t reg_addr, const uint8_t *data, uint32_t len, void 
     buf = malloc(len + 1);
     buf[0] = reg_addr;
     memcpy(buf + 1, data, len);
-    if (write(id.fd, buf, len + 1) < (uint16_t)len)
-    {
+    if (write(id.fd, buf, len + 1) < (uint16_t)len){
         return BME280_E_COMM_FAIL;
     }
 
