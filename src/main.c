@@ -6,6 +6,7 @@
 #include <gpio.h>
 #include <softPwm.h>
 #include <time.h>
+#include <pthread.h>
 
 #include "pid.h"
 #include "bme280.h"
@@ -30,6 +31,7 @@ float ki = 0;
 float kp = 0;
 float kd = 0;
 pthread_t ovenThread;
+pthread_t reportThread;
 struct bme280_dev bme;
 
 int main () {
@@ -53,21 +55,11 @@ int main () {
 
 void initMenu() {
     int command;
+    pthread_create(&reportThread, NULL, writeReport, NULL);
     while(1) {
         requestToUart(uart0_filestream, GET_USER_CMD);
         command = readFromUart(uart0_filestream, GET_USER_CMD).int_value;
         readCommand(command);
-        millisCounter = millis();
-        if(millisCounter - millisAux > 1000){
-            time_t rawtime;
-            struct tm *timeinfo;
-            time(&rawtime);
-            timeinfo = localtime(&rawtime);
-            FILE *fp = fopen("report.csv", "a");
-            fprintf(fp, "%s,%.2f,%.2f,%.2f,%d,%d\n", asctime(timeinfo), internalTemp, externalTemp, userTemp, valueFan, valueResistor);
-            fclose(fp);
-            millisAux = millisCounter;
-        }
         delay(500);
     };
 }
@@ -103,11 +95,24 @@ void readCommand(int command) {
     }
 }
 
+void *writeReport(void *arg) {
+    while(1){
+        time_t rawtime;
+        struct tm *timeinfo;
+        time(&rawtime);
+        timeinfo = localtime(&rawtime);
+        FILE *fp = fopen("report.csv", "a");
+        fprintf(fp, "%s,%.2f,%.2f,%.2f,%d,%d\n", asctime(timeinfo), internalTemp, externalTemp, userTemp, valueFan, valueResistor);
+        fclose(fp);
+        millisAux = millisCounter;
+        sleep(1);
+    }
+}
+
 void *controlTemp(void *arg) {
     system("clear");
     float TI, TR, TE;
     pidSetupConstants(30.0, 0.2, 400.0);
-    int timerStarted = 0;
     do {
         requestToUart(uart0_filestream, GET_INTERNAL_TEMP);
         TI = readFromUart(uart0_filestream, GET_INTERNAL_TEMP).float_value;
@@ -158,5 +163,6 @@ void closeComponents() {
     turnOffResistor();
     turnOffFan();
     closeUart(uart0_filestream);
+    pthread_cancel(reportThread);
     exit(0);
 }
