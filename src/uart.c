@@ -31,12 +31,20 @@ int initUart(){
 
 void requestToUart(int uart0_filestream, unsigned char code){
     unsigned char package[7] = {0x01, 0x23, code, 0x03, 0x02, 0x00, 0x00};
+    for(int i = 0; i < 7; i++){ 
+    printf("Pacote: %u\n", package[i]);
+    }
     short crc = calcula_CRC(package, 7);
+    printf("crc: %d\n", crc);
 
     unsigned char message[9];
     memcpy(message, &package, 7);
     memcpy(&message[7], &crc, 2);
+    for(int i = 0; i < 9; i++){
+    printf("messagem: %u\n", message[i]);
+    }
     int check = write(uart0_filestream, &message[0], 9);
+    printf("check %d\n", check);
     if(check < 0){
         printf("Ocorreu um erro na comunicação com o UART\n");
     }
@@ -65,8 +73,9 @@ void sendToUart(int uart0_filestream, unsigned char code, int value){
 Number_type readFromUart(int uart0_filestream, unsigned char code){
     unsigned char buffer[20];
     Number_type number = {-1, -1.0};
-
+    printf("code: %u\n", code);
     int receivedBytes = read(uart0_filestream, buffer, 20);
+    printf("bytes: %d\n", receivedBytes);
     if(receivedBytes == 0){
         printf("Nenhum dado disponível.\n");
     }

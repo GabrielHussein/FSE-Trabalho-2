@@ -1,7 +1,42 @@
+#include <linux/i2c-dev.h>
+#include <sys/ioctl.h>
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <fcntl.h>
+
 #include "bme280.h"
-#include "i2c.h"
+
 
 int i2c_filestream;
+
+int8_t user_i2c_read(uint8_t id, uint8_t reg_addr, uint8_t *data, uint16_t len) {
+  write(i2c_filestream, &reg_addr, 1);
+  read(i2c_filestream, data, len);
+
+  return 0;
+}
+
+void user_delay_us(uint32_t period) { 
+  usleep(period * 2000); 
+}
+
+int8_t user_i2c_write(uint8_t id, uint8_t reg_addr, uint8_t *data, uint16_t len) {
+  int8_t *buf;
+
+  buf = malloc(len + 1);
+  buf[0] = reg_addr;
+  memcpy(buf + 1, data, len);
+  if (write(i2c_filestream, buf, len + 1) < len) {
+    return BME280_E_COMM_FAIL;
+  }
+
+  free(buf);
+
+  return BME280_OK;
+}
 
 struct bme280_dev bme_start() {
   struct bme280_dev dev;
@@ -56,28 +91,3 @@ float stream_sensor_data_normal_mode(struct bme280_dev *dev) {
   return comp_data.temperature;
 }
 
-int8_t user_i2c_read(uint8_t id, uint8_t reg_addr, uint8_t *data, uint16_t len) {
-  write(i2c_filestream, &reg_addr, 1);
-  read(i2c_filestream, data, len);
-
-  return 0;
-}
-
-void user_delay_us(uint32_t period) { 
-  usleep(period * 2000); 
-}
-
-int8_t user_i2c_write(uint8_t id, uint8_t reg_addr, uint8_t *data, uint16_t len) {
-  int8_t *buf;
-
-  buf = malloc(len + 1);
-  buf[0] = reg_addr;
-  memcpy(buf + 1, data, len);
-  if (write(i2c_filestream, buf, len + 1) < len) {
-    return BME280_E_COMM_FAIL;
-  }
-
-  free(buf);
-
-  return BME280_OK;
-}

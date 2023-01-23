@@ -38,22 +38,6 @@ pthread_t ovenThread;
 pthread_t reportThread;
 struct bme280_dev bme;
 
-int main () {
-
-    FILE *fp = fopen("report.csv", "w+");
-    fprintf(fp, "DATE,TEMP_INT,TEMP_EXT,TEMP_USR,VAL_FAN,VAL_RES;\n");
-    fclose(fp);
-    if (wiringPiSetup () == -1) { 
-        exit (1);
-    }
-    turnOffResistor();
-    turnOffFan();
-    initUart();
-    bme = bme_start();
-    //signal(SIGINT, closeComponents());
-    initMenu();
-    return 0;
-}
 
 void *writeReport(void *arg) {
     while(1){
@@ -124,6 +108,7 @@ void initMenu() {
     while(1) {
         requestToUart(uart0_filestream, GET_USER_CMD);
         command = readFromUart(uart0_filestream, GET_USER_CMD).int_value;
+	printf("comando %d\n", command);
         readCommand(command);
         delay(500);
     };
@@ -161,11 +146,27 @@ void readCommand(int command) {
 }
 
 void closeComponents() {
-//    system("clear");
-    printf("Fechando todos os processos e componentes pendentes\n");
+    printf("\n\n\n\nFechando todos os processos e componentes pendentes\n");
     turnOffResistor();
     turnOffFan();
     closeUart(uart0_filestream);
     pthread_cancel(reportThread);
     exit(0);
+}
+
+int main () {
+
+    FILE *fp = fopen("report.csv", "w+");
+    fprintf(fp, "DATE,TEMP_INT,TEMP_EXT,TEMP_USR,VAL_FAN,VAL_RES;\n");
+    fclose(fp);
+    if (wiringPiSetup () == -1) { 
+        exit (1);
+    }
+    turnOffResistor();
+    turnOffFan();
+    initUart();
+    bme = bme_start();
+    signal(SIGINT, closeComponents);
+    initMenu();
+    return 0;
 }
