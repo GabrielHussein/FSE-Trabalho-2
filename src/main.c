@@ -139,10 +139,12 @@ void initMenu() {
             printf("\nInforme uma temperatura de referência para o forno: ");
             scanf("%f", &userTemp);
             pidUpdateReferences(userTemp);
-	    modeState = 1;
-	    funcState = 1;
-            printf("Modo: %d\n", modeState);
+	        modeState = 1;
+	        funcState = 1;
             pthread_create(&ovenThread, NULL, controlTemp, NULL);
+            while(1){
+                delay(2000);
+            }
     }
 }
 
