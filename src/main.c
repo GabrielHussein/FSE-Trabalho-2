@@ -117,24 +117,23 @@ void initMenu() {
     }
     if(menuChoice == 2){
         while(1) {
-	    kp = 30.0;
-	    ki = 0.2;
-	    kd = 400.0;
-	    command = 3;
+            kp = 30.0;
+            ki = 0.2;
+            kd = 400.0;
             requestToUart(uart0_filestream, GET_USER_CMD);
             command = readFromUart(uart0_filestream, GET_USER_CMD).int_value;
             readCommand(command);
             delay(2000);
         };
     } else if (menuChoice == 1){
-        printf("\nEscolha os valores dos parametros de controle do pid na respectiva ordem kp, ki e kd\n");
-        scanf("%f", &kp);
-	scanf("%f", &ki);
-	scanf("%f", &kd);
-        printf("\nInforme uma temperatura de referência para o forno: ");
-        scanf("%f", &userTemp);
-        pidUpdateReferences(userTemp);
-        readCommand(3);
+            printf("\nEscolha os valores dos parametros de controle do pid na respectiva ordem kp, ki e kd\n");
+            scanf("%f", &kp);
+            scanf("%f", &ki);
+            scanf("%f", &kd);
+            printf("\nInforme uma temperatura de referência para o forno: ");
+            scanf("%f", &userTemp);
+            pidUpdateReferences(userTemp);
+            readCommand(0XA3);
     }
 }
 
