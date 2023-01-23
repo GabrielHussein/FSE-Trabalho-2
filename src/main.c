@@ -31,6 +31,8 @@ long millisCounter = 0;
 int systemState = 0;
 // 1 funcionando 0 parado
 int funcState = 0;
+// 1 curva/terminal 0 dashboard
+int modeState = 0;
 int menuChoice = 0;
 float ki = 0;
 float kp = 0;
@@ -89,20 +91,23 @@ void *controlTemp(void *arg) {
         TE = stream_sensor_data_normal_mode(&bme);
         externalTemp = TE;
         printf("\nTemperaturas\nInterna: %.2f\nReferencia: %.2f\nExterna(I2C): %.2f\n", TI, TR, TE);
-
+	
         printTemp(TI, TE, TR);
 
-        if(TR > TI){
+        if(TR > TI && TI != -1){
+	    printf("Referencia maior que interna, resistor ligado e ventoinha desligada\n");
             turnOnResistor(100);
             turnOffFan();
             value = 100;
             sendToUart(uart0_filestream, SEND_CTRL_SIGNAL, value);
-        } else if(TR <= TI) {
+        } else if(TR <= TI && TR != -1) {
+	    printf("Referencia menor que interna, resistor desligado, ventoinha ligada\n");
             turnOffResistor();
             turnOnFan(100);
             value = -100;
             sendToUart(uart0_filestream, SEND_CTRL_SIGNAL, value);
         }
+	delay(2000);
     } while (funcState == 1);
     pthread_exit(0);
 }
@@ -133,6 +138,9 @@ void initMenu() {
             printf("\nInforme uma temperatura de referência para o forno: ");
             scanf("%f", &userTemp);
             pidUpdateReferences(userTemp);
+	    requestToUart(uart0_filestream, TEMP_CTRL_MODE);
+            modeState = readFromUart(uart0_filestream, TEMP_CTRL_MODE).int_value;
+	    printf("Modo: %d\n", modeState);
             readCommand(0XA3);
     }
 }
