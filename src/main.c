@@ -60,7 +60,9 @@ void *controlTemp(void *arg) {
     
     float TI, TR, TE;
     printf("KP: %f KI: %f KD:%f\n", kp, ki, kd);
-    pidSetupConstants(kp, ki, kd); // 30.0, 0.2, 400.0 
+    printf("Func state %d\n", funcState);
+    pidSetupConstants(kp, ki, kd); // 30.0, 0.2, 400.0
+    pthread_create(&reportThread, NULL, writeReport, NULL);
     do {
         requestToUart(uart0_filestream, GET_INTERNAL_TEMP);
         TI = readFromUart(uart0_filestream, GET_INTERNAL_TEMP).float_value;
@@ -115,7 +117,6 @@ void *controlTemp(void *arg) {
 void initMenu() {
     printf("\nIniciando menu!\n");
     int command;
-    pthread_create(&reportThread, NULL, writeReport, NULL);
     printf("\nEscolha o tipo de execucao (debug ou dashboard)\n1 - Debug\n2 - Dashboard\n");
     while(menuChoice != 1 && menuChoice != 2){
         scanf("%d",&menuChoice);
@@ -138,9 +139,9 @@ void initMenu() {
             printf("\nInforme uma temperatura de referência para o forno: ");
             scanf("%f", &userTemp);
             pidUpdateReferences(userTemp);
-	        requestToUart(uart0_filestream, TEMP_CTRL_MODE);
-            modeState = readFromUart(uart0_filestream, TEMP_CTRL_MODE).int_value;
-	        printf("Modo: %d\n", modeState);
+	    modeState = 1;
+	    funcState = 1;
+            printf("Modo: %d\n", modeState);
             pthread_create(&ovenThread, NULL, controlTemp, NULL);
     }
 }
