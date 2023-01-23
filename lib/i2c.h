@@ -9,13 +9,8 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <fcntl.h>
-#include "bme280.h"
 
-struct identifier
-{
-    uint8_t dev_addr;
-    int8_t fd;
-};
+#include "bme280.h"
 
 void user_delay_us(uint32_t, void *);
 int8_t user_i2c_read(uint8_t, uint8_t *, uint32_t, void *);
