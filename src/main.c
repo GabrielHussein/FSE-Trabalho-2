@@ -138,10 +138,10 @@ void initMenu() {
             printf("\nInforme uma temperatura de referência para o forno: ");
             scanf("%f", &userTemp);
             pidUpdateReferences(userTemp);
-	    requestToUart(uart0_filestream, TEMP_CTRL_MODE);
+	        requestToUart(uart0_filestream, TEMP_CTRL_MODE);
             modeState = readFromUart(uart0_filestream, TEMP_CTRL_MODE).int_value;
-	    printf("Modo: %d\n", modeState);
-            readCommand(0XA3);
+	        printf("Modo: %d\n", modeState);
+            pthread_create(&ovenThread, NULL, controlTemp, NULL);
     }
 }
 
