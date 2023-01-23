@@ -5,7 +5,7 @@
 #include <termios.h>  //Used for UART
 #include <unistd.h>   //Used for UART
 
-#include "uart_defs.h"
+#include "uart.h"
 #include "crc16.h"
 
 int initUart(){

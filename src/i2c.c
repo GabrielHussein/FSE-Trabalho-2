@@ -1,40 +1,38 @@
 #include "bme280.h"
 #include "i2c.h"
 
-
 struct bme280_dev bme_start(){
   int8_t rslt = BME280_OK;
   struct bme280_dev dev;
   struct identifier id;
-  
+
   id.dev_addr = BME280_I2C_ADDR_PRIM;
   dev.intf = BME280_I2C_INTF;
-  dev.read = userI2cRead;
-  dev.write = userI2cWrite;
-  dev.delay_us = userDelayMs;
-
-  dev.intf_ptr = &id;
+  dev.read = user_i2c_read;
+  dev.write = user_i2c_write;
+  dev.delay_ms = user_delay_us;
   char i2c_[] = "/dev/i2c-1";
 
   if((id.fd = open(i2c_, O_RDWR)) < 0){
-    fprintf(stderr, "Failed to open the i2c bus %X\n", BME280_ADD);
+    fprintf(stderr, "Failed to open the i2c bus %X\n", BME280_ALL);
     return bme_start();
   }
 
-
-
   if(ioctl(id.fd, I2C_SLAVE, id.dev_addr) < 0){
+    close(id.fd);
     fprintf(stderr, "Failed to acquire bus access and/or talk to slave.\n");
+    return bme_start();
   }
 
+  dev.intf_ptr = &id;
 
   rslt = bme280_init(&dev);
   if(rslt != BME280_OK){
+    close(id.fd);
     fprintf(stderr, "Failed to stream sensor data (code %+d).\n", rslt);
+    return bme_start();
   }
-
   rslt = stream_sensor_data_normal_mode(&dev);
-
   return dev;
 }
 
@@ -59,17 +57,18 @@ float stream_sensor_data_normal_mode(struct bme280_dev *dev) {
     rslt = bme280_set_sensor_settings(settings_sel, dev);
     rslt = bme280_set_sensor_mode(BME280_NORMAL_MODE, dev);
 
-    dev->delay_us(100000, dev->intf_ptr);
+    dev->delay_ms(100000);
     rslt = bme280_get_sensor_data(BME280_ALL, &comp_data, dev);
 
     return comp_data.temperature;
 }
 
-void userDelayMs(uint32_t period, void *intf_ptr){
+void user_delay_us(uint32_t period, void *intf_ptr){
     usleep(period * 2000);
 }
 
-int8_t userI2cRead(uint8_t reg_addr, uint8_t *data, uint32_t len, void *intf_ptr){
+int8_t user_i2c_read(uint8_t reg_addr, uint8_t *data, uint32_t len, void *intf_ptr){
+    uint8_t *buf;
     struct identifier id;
 
     id = *((struct identifier *)intf_ptr);
@@ -80,7 +79,7 @@ int8_t userI2cRead(uint8_t reg_addr, uint8_t *data, uint32_t len, void *intf_ptr
     return 0;
 }
 
-int8_t userI2cWrite(uint8_t reg_addr, const uint8_t *data, uint32_t len, void *intf_ptr){
+int8_t user_i2c_write(uint8_t reg_addr, const uint8_t *data, uint32_t len, void *intf_ptr){
     uint8_t *buf;
     struct identifier id;
 

@@ -6,7 +6,7 @@ void printTemp(float intTemp, float extTemp, float refTemp)   {
 
   if (wiringPiSetup () == -1) exit (1);
 
-  fd = wiringPiI2CSetup(I2C_ADDR);
+  fd = wiringPiI2CSetup(I2C_ADDR_LCD);
 
   startDisplay();
   displayLoc(LINE1);
@@ -77,11 +77,11 @@ void lcdToggleEnable(int bits)   {
 
 void startDisplay()   {
   // Initialise display
-  lcd_byte(0x33, LCD_CMD); // Initialise
-  lcd_byte(0x32, LCD_CMD); // Initialise
-  lcd_byte(0x06, LCD_CMD); // Cursor move direction
-  lcd_byte(0x0C, LCD_CMD); // 0x0F On, Blink Off
-  lcd_byte(0x28, LCD_CMD); // Data length, number of lines, font size
-  lcd_byte(0x01, LCD_CMD); // Clear display
+  lcdByte(0x33, LCD_CMD); // Initialise
+  lcdByte(0x32, LCD_CMD); // Initialise
+  lcdByte(0x06, LCD_CMD); // Cursor move direction
+  lcdByte(0x0C, LCD_CMD); // 0x0F On, Blink Off
+  lcdByte(0x28, LCD_CMD); // Data length, number of lines, font size
+  lcdByte(0x01, LCD_CMD); // Clear display
   delayMicroseconds(500);
 }

@@ -3,10 +3,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <wiringPi.h>
-#include <gpio.h>
 #include <softPwm.h>
 #include <time.h>
 #include <pthread.h>
+#include <signal.h>
+#include <unistd.h>
+#include <termios.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 #include "pid.h"
 #include "bme280.h"
@@ -35,13 +39,10 @@ pthread_t reportThread;
 struct bme280_dev bme;
 
 int main () {
-    signal(SIGINT, closeComponents);
 
-    FILE *fp = fopen("report.csv", "w");
+    FILE *fp = fopen("report.csv", "w+");
     fprintf(fp, "DATE,TEMP_INT,TEMP_EXT,TEMP_USR,VAL_FAN,VAL_RES;\n");
     fclose(fp);
-
-    wirintPiSetup();
     if (wiringPiSetup () == -1) { 
         exit (1);
     }
@@ -49,50 +50,9 @@ int main () {
     turnOffFan();
     initUart();
     bme = bme_start();
+    //signal(SIGINT, closeComponents());
     initMenu();
     return 0;
-}
-
-void initMenu() {
-    int command;
-    pthread_create(&reportThread, NULL, writeReport, NULL);
-    while(1) {
-        requestToUart(uart0_filestream, GET_USER_CMD);
-        command = readFromUart(uart0_filestream, GET_USER_CMD).int_value;
-        readCommand(command);
-        delay(500);
-    };
-}
-
-void readCommand(int command) {
-    switch(command) {
-        case 1:
-            printf("Ligando o forno");
-            sendToUartByte(uart0_filestream, SEND_SYS_STATE, 1);
-            systemState = 1;
-            break;
-        case 2:
-            printf("Desligando o forno");
-            sendToUartByte(uart0_filestream, SEND_SYS_STATE, 0);
-            systemState = 0;
-            break;
-        case 3:
-            printf("Iniciando aquecimento");
-            sendToUartByte(uart0_filestream, SEND_FUNC_STATE, 1);
-            funcState = 1;
-            pthread_create(&ovenThread, NULL, controlTemp, NULL);
-            break;
-        case 4:
-            printf("Cancelando aquecimento");
-            sendToUartByte(uart0_filestream, SEND_FUNC_STATE, 0);
-            funcState = 0;
-            break;
-        case 5:
-            //alterar o tipo entre referencia e curva
-            break;
-        default:
-            break;
-    }
 }
 
 void *writeReport(void *arg) {
@@ -134,7 +94,7 @@ void *controlTemp(void *arg) {
         requestToUart(uart0_filestream, GET_REF_TEMP);
         TR = readFromUart(uart0_filestream, GET_REF_TEMP).float_value;
         userTemp = TR;
-        pidUpdateReference(TR);
+        pidUpdateReferences(TR);
 
         TE = stream_sensor_data_normal_mode(&bme);
         externalTemp = TE;
@@ -157,8 +117,51 @@ void *controlTemp(void *arg) {
     pthread_exit(0);
 }
 
+void initMenu() {
+    printf("\nIniciando menu!\n");
+    int command;
+    pthread_create(&reportThread, NULL, writeReport, NULL);
+    while(1) {
+        requestToUart(uart0_filestream, GET_USER_CMD);
+        command = readFromUart(uart0_filestream, GET_USER_CMD).int_value;
+        readCommand(command);
+        delay(500);
+    };
+}
+
+void readCommand(int command) {
+    switch(command) {
+        case 1:
+            printf("Ligando o forno");
+            sendToUartByte(uart0_filestream, SEND_SYS_STATE, 1);
+            systemState = 1;
+            break;
+        case 2:
+            printf("Desligando o forno");
+            sendToUartByte(uart0_filestream, SEND_SYS_STATE, 0);
+            systemState = 0;
+            break;
+        case 3:
+            printf("Iniciando aquecimento");
+            sendToUartByte(uart0_filestream, SEND_FUNC_STATE, 1);
+            funcState = 1;
+            pthread_create(&ovenThread, NULL, controlTemp, NULL);
+            break;
+        case 4:
+            printf("Cancelando aquecimento");
+            sendToUartByte(uart0_filestream, SEND_FUNC_STATE, 0);
+            funcState = 0;
+            break;
+        case 5:
+            //alterar o tipo entre referencia e curva
+            break;
+        default:
+            break;
+    }
+}
+
 void closeComponents() {
-    system("clear");
+//    system("clear");
     printf("Fechando todos os processos e componentes pendentes\n");
     turnOffResistor();
     turnOffFan();

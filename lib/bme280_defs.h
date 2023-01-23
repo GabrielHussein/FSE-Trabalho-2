@@ -364,6 +364,9 @@ struct bme280_dev
     /*! Device Id */
     uint8_t dev_id;
 
+    /*< Interface function pointer used to enable the device address for I2C and chip selection for SPI */
+    void *intf_ptr;
+
     /*! SPI/I2C interface */
     enum bme280_intf intf;
 

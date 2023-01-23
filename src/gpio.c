@@ -2,6 +2,8 @@
 #include <softPwm.h>
 #include <wiringPi.h>
 
+#include "gpio.h"
+
 #define RESISTOR 4
 #define FAN 5
 
@@ -12,6 +14,9 @@ void turnOnResistor(int resistorValue) {
 }
 
 void turnOffResistor() {
+  if(wiringPiSetup() == -1){
+	  exit(1);
+  }
   pinMode(RESISTOR, OUTPUT);
   softPwmCreate(RESISTOR, 0, 100);
   softPwmWrite(RESISTOR, 0);
@@ -24,6 +29,9 @@ void turnOnFan(int fanValue) {
 }
 
 void turnOffFan() {
+  if(wiringPiSetup() == -1){
+  	exit(1);
+  }
   pinMode(FAN, OUTPUT);
   softPwmCreate(FAN, 0, 100);
   softPwmWrite(FAN, 0);
