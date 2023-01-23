@@ -57,7 +57,7 @@ void *writeReport(void *arg) {
 void *controlTemp(void *arg) {
     
     float TI, TR, TE;
-    printf("%f\n%f\n%f\n", kp, ki, kd);
+    printf("KP: %f KI: %f KD:%f\n", kp, ki, kd);
     pidSetupConstants(kp, ki, kd); // 30.0, 0.2, 400.0 
     do {
         requestToUart(uart0_filestream, GET_INTERNAL_TEMP);
@@ -123,9 +123,8 @@ void initMenu() {
 	    command = 3;
             requestToUart(uart0_filestream, GET_USER_CMD);
             command = readFromUart(uart0_filestream, GET_USER_CMD).int_value;
-            printf("comando %d\n", command);
             readCommand(command);
-            delay(500000);
+            delay(2000);
         };
     } else if (menuChoice == 1){
         printf("\nEscolha os valores dos parametros de controle do pid na respectiva ordem kp, ki e kd\n");
@@ -141,28 +140,28 @@ void initMenu() {
 
 void readCommand(int command) {
     switch(command) {
-        case 1:
-            printf("Ligando o forno");
+        case 0xA1:
+            printf("Ligando o forno\n");
             sendToUartByte(uart0_filestream, SEND_SYS_STATE, 1);
             systemState = 1;
             break;
-        case 2:
-            printf("Desligando o forno");
+        case 0xA2:
+            printf("Desligando o forno\n");
             sendToUartByte(uart0_filestream, SEND_SYS_STATE, 0);
             systemState = 0;
             break;
-        case 3:
-            printf("Iniciando aquecimento");
+        case 0XA3:
+            printf("Iniciando aquecimento\n");
             sendToUartByte(uart0_filestream, SEND_FUNC_STATE, 1);
             funcState = 1;
             pthread_create(&ovenThread, NULL, controlTemp, NULL);
             break;
-        case 4:
-            printf("Cancelando aquecimento");
+        case 0XA4:
+            printf("Cancelando aquecimento\n");
             sendToUartByte(uart0_filestream, SEND_FUNC_STATE, 0);
             funcState = 0;
             break;
-        case 5:
+        case 0XA5:
             //alterar o tipo entre referencia e curva
             break;
         default:
