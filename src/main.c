@@ -31,6 +31,7 @@ long millisCounter = 0;
 int systemState = 0;
 // 1 funcionando 0 parado
 int funcState = 0;
+int menuChoice = 0;
 float ki = 0;
 float kp = 0;
 float kd = 0;
@@ -56,7 +57,8 @@ void *writeReport(void *arg) {
 void *controlTemp(void *arg) {
     system("clear");
     float TI, TR, TE;
-    pidSetupConstants(30.0, 0.2, 400.0);
+    printf("%f\n%f\n%f\n", kp, ki, kd);
+    pidSetupConstants(kp, ki, kd); // 30.0, 0.2, 400.0 
     do {
         requestToUart(uart0_filestream, GET_INTERNAL_TEMP);
         TI = readFromUart(uart0_filestream, GET_INTERNAL_TEMP).float_value;
@@ -75,10 +77,14 @@ void *controlTemp(void *arg) {
             }
         }
 
-        requestToUart(uart0_filestream, GET_REF_TEMP);
-        TR = readFromUart(uart0_filestream, GET_REF_TEMP).float_value;
-        userTemp = TR;
-        pidUpdateReferences(TR);
+        if(menuChoice==2){
+            requestToUart(uart0_filestream, GET_REF_TEMP);
+            TR = readFromUart(uart0_filestream, GET_REF_TEMP).float_value;
+            userTemp = TR;
+            pidUpdateReferences(TR);
+        } else if(menuChoice==2){
+            TR = userTemp;
+        }
 
         TE = stream_sensor_data_normal_mode(&bme);
         externalTemp = TE;
@@ -105,13 +111,26 @@ void initMenu() {
     printf("\nIniciando menu!\n");
     int command;
     pthread_create(&reportThread, NULL, writeReport, NULL);
-    while(1) {
-        requestToUart(uart0_filestream, GET_USER_CMD);
-        command = readFromUart(uart0_filestream, GET_USER_CMD).int_value;
-	printf("comando %d\n", command);
-        readCommand(command);
-        delay(500);
-    };
+    printf("\nEscolha o tipo de execucao (debug ou dashboard)\n1 - Debug\n 2 - Dashboard\n");
+    while(menuChoice > 2 && menuChoice < 1){
+        scanf("%d",&menuChoice);
+    }
+    if(menuChoice == 2){
+        while(1) {
+            requestToUart(uart0_filestream, GET_USER_CMD);
+            command = readFromUart(uart0_filestream, GET_USER_CMD).int_value;
+            printf("comando %d\n", command);
+            readCommand(command);
+            delay(500);
+        };
+    } else if (menuChoice == 1){
+        printf("\nEscolha os valores dos parametros de controle do pid na respectiva ordem kp, ki e kd\n");
+        scanf("%f %f %f", kp, ki, kd);
+        printf("\nInforme uma temperatura de referência para o forno: ");
+        scanf("%f", &userTemp);
+        pidUpdateReferences(userTemp);
+        readCommand(3);
+    }
 }
 
 void readCommand(int command) {
