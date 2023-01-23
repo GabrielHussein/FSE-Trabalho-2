@@ -48,6 +48,7 @@ void requestToUart(int uart0_filestream, unsigned char code){
     if(check < 0){
         printf("Ocorreu um erro na comunicação com o UART\n");
     }
+
     sleep(1);
 }
 

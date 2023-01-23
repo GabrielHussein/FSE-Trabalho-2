@@ -55,7 +55,7 @@ void *writeReport(void *arg) {
 }
 
 void *controlTemp(void *arg) {
-    system("clear");
+    
     float TI, TR, TE;
     printf("%f\n%f\n%f\n", kp, ki, kd);
     pidSetupConstants(kp, ki, kd); // 30.0, 0.2, 400.0 
@@ -111,21 +111,27 @@ void initMenu() {
     printf("\nIniciando menu!\n");
     int command;
     pthread_create(&reportThread, NULL, writeReport, NULL);
-    printf("\nEscolha o tipo de execucao (debug ou dashboard)\n1 - Debug\n 2 - Dashboard\n");
-    while(menuChoice > 2 && menuChoice < 1){
+    printf("\nEscolha o tipo de execucao (debug ou dashboard)\n1 - Debug\n2 - Dashboard\n");
+    while(menuChoice != 1 && menuChoice != 2){
         scanf("%d",&menuChoice);
     }
     if(menuChoice == 2){
         while(1) {
+	    kp = 30.0;
+	    ki = 0.2;
+	    kd = 400.0;
+	    command = 3;
             requestToUart(uart0_filestream, GET_USER_CMD);
             command = readFromUart(uart0_filestream, GET_USER_CMD).int_value;
             printf("comando %d\n", command);
             readCommand(command);
-            delay(500);
+            delay(500000);
         };
     } else if (menuChoice == 1){
         printf("\nEscolha os valores dos parametros de controle do pid na respectiva ordem kp, ki e kd\n");
-        scanf("%f %f %f", kp, ki, kd);
+        scanf("%f", &kp);
+	scanf("%f", &ki);
+	scanf("%f", &kd);
         printf("\nInforme uma temperatura de referência para o forno: ");
         scanf("%f", &userTemp);
         pidUpdateReferences(userTemp);
@@ -183,7 +189,7 @@ int main () {
     }
     turnOffResistor();
     turnOffFan();
-    initUart();
+    uart0_filestream = initUart();
     bme = bme_start();
     signal(SIGINT, closeComponents);
     initMenu();
