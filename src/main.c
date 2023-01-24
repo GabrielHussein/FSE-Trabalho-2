@@ -49,7 +49,7 @@ void *writeReport(void *arg) {
         time(&rawtime);
         timeinfo = localtime(&rawtime);
         FILE *fp = fopen("report.csv", "a");
-        fprintf(fp, "%s,%.2f,%.2f,%.2f,%d,%d\n", asctime(timeinfo), internalTemp, externalTemp, userTemp, valueFan, valueResistor);
+        fprintf(fp, "%.2f,%.2f,%.2f,%d,%d,%s\n", internalTemp, externalTemp, userTemp, valueFan, valueResistor, asctime(timeinfo));
         fclose(fp);
         millisAux = millisCounter;
         sleep(1);
@@ -86,7 +86,7 @@ void *controlTemp(void *arg) {
             TR = readFromUart(uart0_filestream, GET_REF_TEMP).float_value;
             userTemp = TR;
             pidUpdateReferences(TR);
-        } else if(menuChoice==2){
+        } else if(menuChoice==1){
             TR = userTemp;
         }
 
@@ -139,6 +139,7 @@ void initMenu() {
             printf("\nInforme uma temperatura de referência para o forno: ");
             scanf("%f", &userTemp);
             pidUpdateReferences(userTemp);
+            printf("User temp %f\n", userTemp);
 	        modeState = 1;
 	        funcState = 1;
             pthread_create(&ovenThread, NULL, controlTemp, NULL);
@@ -191,7 +192,7 @@ void closeComponents() {
 int main () {
 
     FILE *fp = fopen("report.csv", "w+");
-    fprintf(fp, "DATE,TEMP_INT,TEMP_EXT,TEMP_USR,VAL_FAN,VAL_RES;\n");
+    fprintf(fp, "TEMP_INT,TEMP_EXT,TEMP_USR,VAL_FAN,VAL_RES,DATE;\n");
     fclose(fp);
     if (wiringPiSetup () == -1) { 
         exit (1);
